@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  devIndicators: true, // 显示右下角开发调试浮层
+  // 把 devIndicators 那一行删掉
 };
 
 export default nextConfig;

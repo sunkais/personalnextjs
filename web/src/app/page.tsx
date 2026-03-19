@@ -18,23 +18,34 @@ async function withTimeout<T>(promise: Promise<T>, fallback: T, ms = 4000): Prom
 
 export default async function Home() {
   const supabase = await createClient();
+
   const [{ data: members }, { data: recentWorks }] = await Promise.all([
+    // 1. 成员查询
     withTimeout(
-      supabase
-        .from('members')
-        .select('*')
-        .order('created_at', { ascending: true }),
-      { data: [] as Member[] | null, error: null },
+      (async () => {
+        const { data, error } = await supabase
+          .from('members')
+          .select('*')
+          .order('created_at', { ascending: true });
+        return { data: data as Member[] | null, error }; // 👈 只返回这两个字段
+      })(),
+      { data: [] as Member[] | null, error: null as any },
     ),
+    // 2. 作品查询
     withTimeout(
-      supabase
-        .from('works')
-        .select('id, member_id, title, type, cover_image, created_at, members(id, name)')
-        .order('created_at', { ascending: false })
-        .limit(6),
-      { data: [], error: null },
+      (async () => {
+        const { data, error } = await supabase
+          .from('works')
+          .select('id, member_id, title, type, cover_image, created_at, members(id, name)')
+          .order('created_at', { ascending: false })
+          .limit(6);
+        return { data: data as any[] | null, error }; // 👈 只返回这两个字段
+      })(),
+      { data: [] as any[], error: null as any },
     ),
   ]);
+
+  // 下面的 return 保持不变
 
   return (
     <div className="space-y-16">

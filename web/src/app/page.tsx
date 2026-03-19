@@ -9,18 +9,32 @@ const COLORS = [
   'from-[#ffd93d] to-[#fbbf24]',
 ];
 
+async function withTimeout<T>(promise: Promise<T>, fallback: T, ms = 4000): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((resolve) => setTimeout(() => resolve(fallback), ms)),
+  ]);
+}
+
 export default async function Home() {
   const supabase = await createClient();
-  const { data: members } = await supabase
-    .from('members')
-    .select('*')
-    .order('created_at', { ascending: true });
-
-  const { data: recentWorks } = await supabase
-    .from('works')
-    .select('id, member_id, title, type, cover_image, created_at, members(id, name)')
-    .order('created_at', { ascending: false })
-    .limit(6);
+  const [{ data: members }, { data: recentWorks }] = await Promise.all([
+    withTimeout(
+      supabase
+        .from('members')
+        .select('*')
+        .order('created_at', { ascending: true }),
+      { data: [] as Member[] | null, error: null },
+    ),
+    withTimeout(
+      supabase
+        .from('works')
+        .select('id, member_id, title, type, cover_image, created_at, members(id, name)')
+        .order('created_at', { ascending: false })
+        .limit(6),
+      { data: [], error: null },
+    ),
+  ]);
 
   return (
     <div className="space-y-16">

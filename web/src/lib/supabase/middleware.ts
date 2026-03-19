@@ -21,6 +21,10 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
-  await supabase.auth.getUser();
+  try {
+    await supabase.auth.getUser();
+  } catch {
+    // Allow anonymous visitors through even when refresh cookies are stale.
+  }
   return supabaseResponse;
 }

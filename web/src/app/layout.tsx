@@ -4,6 +4,7 @@ import './globals.css';
 import { Nav } from '@/components/Nav';
 import { OnboardingGate } from '@/components/OnboardingGate';
 import { createClient } from '@/lib/supabase/server';
+import type { Member } from '@/types/database';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -20,16 +21,26 @@ export const metadata: Metadata = {
   description: '四位同学的学习作品展示空间，游戏、应用、笔记一网打尽',
 };
 
+async function withTimeout<T>(promise: Promise<T>, fallback: T, ms = 4000): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((resolve) => setTimeout(() => resolve(fallback), ms)),
+  ]);
+}
+
 export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   const supabase = await createClient();
-  const { data: members } = await supabase
-    .from('members')
-    .select('*')
-    .order('created_at', { ascending: true });
+  const { data: members } = await withTimeout(
+    supabase
+      .from('members')
+      .select('*')
+      .order('created_at', { ascending: true }),
+    { data: [] as Member[] | null, error: null },
+  );
 
   return (
     <html lang="zh-CN">
